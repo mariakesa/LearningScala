@@ -1,12 +1,9 @@
-val scala3Version = "3.6.4"
+name := "ussupremecourt"
 
-lazy val root = project
-  .in(file("."))
-  .settings(
-    name := "ussupremecourt",
-    version := "0.1.0-SNAPSHOT",
+version := "0.1"
 
-    scalaVersion := scala3Version,
+scalaVersion := "3.3.1"
 
-    libraryDependencies += "org.scalameta" %% "munit" % "1.0.0" % Test
-  )
+libraryDependencies ++= Seq(
+  "org.apache.commons" % "commons-csv" % "1.10.0"
+)

@@ -1,5 +1,5 @@
-@main def hello(): Unit =
-  println("Hello world!")
-  println(msg)
+import analysis.LegalReadabilityAnalyzer
 
-def msg = "I was compiled by Scala 3. :)"
+@main def runAnalysis(): Unit = {
+  LegalReadabilityAnalyzer.main(Array())
+}
