@@ -1,45 +1,48 @@
 package analysis
 
+import org.apache.commons.csv.{CSVFormat, CSVParser}
 import scala.io.Source
+import java.nio.file.{Files, Paths}
+import java.nio.charset.StandardCharsets
+import java.io.{BufferedWriter, FileWriter}
+import collection.JavaConverters.asScalaIteratorConverter
 
 object LegalReadabilityAnalyzer {
   def main(args: Array[String]): Unit = {
     val filePath = "/home/maria/Documents/LegalData/all_opinions.csv"
-    val source = Source.fromFile(filePath)
-    val lines = source.getLines()
+    val outputFilePath = "/home/maria/Documents/LegalData/readability_scores.csv"
 
-    // Read header row and determine column indices
-    val headers = lines.next().split(",").map(_.trim)
-    val yearIndex = headers.indexOf("year_filed")
-    val textIndex = headers.indexOf("text")
+    // Open CSV file
+    val reader = Files.newBufferedReader(Paths.get(filePath), StandardCharsets.UTF_8)
+    val csvParser = CSVParser.parse(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())
 
-    // Ensure columns exist
-    if (yearIndex == -1 || textIndex == -1) {
-      println("Error: CSV does not contain 'year_filed' or 'text' columns.")
-      source.close()
-      return
-    }
+    val writer = new BufferedWriter(new FileWriter(outputFilePath))
+    writer.write("year_filed,FleschReadingEaseScore\n") // Write header
 
-    // Process each line safely
-    val readabilityScores = lines.flatMap { line =>
-      val columns = line.split(",").map(_.trim)
-      if (columns.length > math.max(yearIndex, textIndex)) {
-        try {
-          val yearFiled = columns(yearIndex).toInt
-          val text = columns(textIndex)
-          val fkgl = FleschKincaidCalculator.calculateFKGL(text)
-          Some(yearFiled, fkgl)
-        } catch {
-          case _: Exception => None // Ignore malformed rows
+    // Define valid year range
+    val validYearRange = 1750 to 2025
+
+    // Process CSV properly (handling quoted fields)
+    val readabilityScores = csvParser.getRecords.iterator().asScala.flatMap { record =>
+      try {
+        val yearFiled = record.get("year_filed").toInt
+        if (!validYearRange.contains(yearFiled)) None // Ignore invalid years
+        else {
+          val text = record.get("text")
+          val fres = FleschKincaidCalculator.calculateFRES(text) // Compute FRES
+          
+          // Write to CSV
+          writer.write(s"$yearFiled,$fres\n")
+          Some((yearFiled, fres))
         }
-      } else None
+      } catch {
+        case _: Exception => None // Skip malformed rows
+      }
     }.toList
 
-    source.close()
+    reader.close()
+    writer.close()
 
-    // Print first few results
-    readabilityScores.take(5).foreach { case (year, fkgl) =>
-      println(s"Year: $year, Flesch-Kincaid Grade Level: $fkgl")
-    }
+    println(s"Readability scores saved to: $outputFilePath")
   }
 }
