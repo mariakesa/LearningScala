@@ -1,1 +1,3 @@
 sbt new scala/scala3.g8 --name=ussupremecourt
+
+"/home/maria/Documents/LegalData/all_opinions.csv"

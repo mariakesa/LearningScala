@@ -6,3 +6,7 @@ hs_err_pid*
 /cs
 /.metals
 /.scala-build
+
+/.vscode
+/.
+*.bin
